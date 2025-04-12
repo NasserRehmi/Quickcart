@@ -9,7 +9,7 @@
 
 ## 📦 Installation
 ```bash
-git clone https://github.com/your-username/quicard.git
+git clone https://github.com/Rehmi_Nasser/quicard.git
 cd quicard/server
 npm install
 npm start
