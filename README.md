@@ -1,4 +1,4 @@
-# 🚧 Quickard E-Commerce (Under Construction)
+# 🚧 Reparili (Under Construction)
 
 > A MERN stack e-commerce project with MySQL integration.
 
