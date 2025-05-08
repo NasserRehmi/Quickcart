@@ -13,3 +13,7 @@ git clone https://github.com/Rehmi_Nasser/reparili.git
 cd reparili/server
 npm install
 npm start
+```bash
+cd reparili/reparili
+npm install
+npm run dev
