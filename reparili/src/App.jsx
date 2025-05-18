@@ -31,6 +31,7 @@ import AddAdmin from "./components/AddAdmin";
 import PayBuilder from "./components/PayBuilder";
 import PaymentSuccess from "./components/payment-success";
 import PaymentFail from "./components/payment-fail";
+import TopBuilders from "./components/TopBuilders";
 function App() {
   return (
     <Router>
@@ -45,6 +46,7 @@ function App() {
         <Route path="/builder/details/:cin" element={<PrivateRoute><Details /></PrivateRoute>} />
         <Route path="/updatebuilder" element={<PrivateRoute><UpdateBuilder /></PrivateRoute>} />
         <Route path="/workrequest" element={<PrivateRoute><WorkRequest /></PrivateRoute>} />
+        <Route path="/topbuilders" element={<PrivateRoute><TopBuilders /></PrivateRoute>} />
         <Route path="/workrequest/:builderCin" element={<PrivateRoute><WorkRequest /></PrivateRoute>} />
         <Route path="/workrequest/details/:id" element={<WorkRequestDetails />} />
         <Route path="/clientwork/:clientCin" element={<PrivateRoute><ClientWork /></PrivateRoute>} />

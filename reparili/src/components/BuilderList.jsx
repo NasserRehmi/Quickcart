@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link ,useNavigate } from "react-router-dom";
 import CsLayout from './CsLayout';
 const BuilderList = () => {
+  const navigate = useNavigate();
   const [builders, setBuilders] = useState([]);
   useEffect(() => {
     axios
@@ -12,7 +13,6 @@ const BuilderList = () => {
           setBuilders(result.data.Result);
         } else {
           alert(result.data.Error);
-          console.log("hne ")
         }
       })
       .catch((err) => console.log(err));
@@ -20,8 +20,14 @@ const BuilderList = () => {
   return (
     <CsLayout>
     <div className="login-page">
-    <div className="builders-container">
+    <div className="builders-container"> <div  className="top-button-container"><button
+        className="view-top-button"
+        onClick={() => navigate('/topbuilders')}
+      >
+        View Top Builders
+      </button></div>
   <h2 className="section-title">Available Builders</h2>
+ 
   <div className="builder-list">
     {builders.map((builder) => (
       <div key={builder.cin} className="builder-card">

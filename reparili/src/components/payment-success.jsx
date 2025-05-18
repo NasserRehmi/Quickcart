@@ -9,12 +9,11 @@ function PaymentSuccess( ) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Récupérer l'ID de paiement depuis l'URL si disponible
     const urlParams = new URLSearchParams(window.location.search);
     const paymentId = urlParams.get('payment_id');
     
     if (paymentId) {
-      // Vérifier le statut du paiement
+
       axios.get(`${API_URL}/api/verify-payment/${paymentId}`)
         .then(response => {
           setPaymentDetails(response.data.paymentStatus);
