@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import verifyUser from '../middleware/VerifyUser.js';
 import bcrypt from 'bcrypt';
+import axios from 'axios';
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -167,27 +168,45 @@ router.get("/admin/:cin", (req, res) => {
 });
 
 router.post("/builderupdate", async (req, res) => {
-  const { cin, adresse,email, telephone, mdp } = req.body;
+  const { cin, adresse, email, telephone, mdp, paymeeApiKey, paymentInfoNote } = req.body;
   if (!cin) return res.status(400).json({ message: "CIN is required" });
 
-  let sql = "UPDATE builder SET adresse=?,email=?, telephone=? WHERE cin=?";
-  let values = [adresse,email, telephone, cin];
+  try {
+    let sql = "";
+    let values = [];
 
-  if (mdp) {
-    try {
+    if (mdp) {
+      // Hash the password and include all fields, including api_key and info_pay
       const hashedPassword = await bcrypt.hash(mdp, 10);
-      sql = "UPDATE builder SET adresse=?, telephone=?, mdp=? WHERE cin=?";
-      values = [adresse,email, telephone, hashedPassword, cin];
-    } catch (error) {
-      return res.status(500).json({ message: "Error hashing password" });
+      sql = `
+        UPDATE builder 
+        SET adresse=?, email=?, telephone=?, mdp=?, api_key=?, info_pay=? 
+        WHERE cin=?
+      `;
+      values = [adresse, email, telephone, hashedPassword, paymeeApiKey || null, paymentInfoNote || null, cin];
+    } else {
+      // No password update, update other fields including api_key and info_pay
+      sql = `
+        UPDATE builder 
+        SET adresse=?, email=?, telephone=?, api_key=?, info_pay=? 
+        WHERE cin=?
+      `;
+      values = [adresse, email, telephone, paymeeApiKey || null, paymentInfoNote || null, cin];
     }
-  }
 
-  con.query(sql, values, (err, result) => {
-    if (err) return res.status(500).json({ message: "Database error" });
-    res.json({ message: "Builder updated successfully" });
-  });
+    con.query(sql, values, (err, result) => {
+      if (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ message: "Database error" });
+      }
+      res.json({ message: "Builder updated successfully" });
+    });
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
+
 
 router.post("/clientupdate", async (req, res) => {
   const { cin, adresse, telephone, mdp } = req.body;
@@ -314,9 +333,9 @@ router.post("/requests", uploadUploads.array("photos"), (req, res) => {
 
     const clientName = results[0].client || "Unknown Client";
     const builderName = results[0].builder_name || "Unknown Builder";
-
-    const insertQuery = `INSERT INTO work (client_cin, builder_cin, surface, adresse, images, client, builder_name) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    const insertValues = [clientCin, cin, area, address, JSON.stringify(photos), clientName, builderName];
+    const status ="pending";
+    const insertQuery = `INSERT INTO work (client_cin, builder_cin, surface, adresse, images, client, builder_name,status) VALUES (?,?, ?, ?, ?, ?, ?, ?)`;
+    const insertValues = [clientCin, cin, area, address, JSON.stringify(photos), clientName, builderName,status];
 
     con.query(insertQuery, insertValues, (err, result) => {
       if (err) return res.status(500).json({ message: "Failed to submit request" });
@@ -526,5 +545,137 @@ router.put('/clients/edit/:clientcin', verifyUser, (req, res) => {
     res.json({ message: 'Client updated successfully' });
   });
 });
+
+
+
+
+// Configuration des URLs
+const PAYMEE_API_URL = process.env.PAYMEE_API_URL || 'https://sandbox.paymee.tn/api/v2/payments/create';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://localhost:5173';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+
+// Route de paiement
+router.post('/payment', (req, res) => {
+  console.log('Payment request received:', req.body);
+
+  const { builderCin, amount, orderId, clientCin } = req.body;
+
+  // Validation des entrées
+  if (!builderCin || !amount || !orderId || !clientCin) {
+    console.error('Missing required fields:', { builderCin, amount, orderId, clientCin });
+    return res.status(400).json({ success: false, message: 'Champs requis manquants' });
+  }
+
+  // Vérification de l'existence du client
+  con.query('SELECT * FROM client WHERE cin = ?', [clientCin], (clientErr, clientResults) => {
+    if (clientErr) {
+      console.error('DB error fetching client:', clientErr);
+      return res.status(500).json({ success: false, message: 'Erreur de base de données (client)' });
+    }
+    if (clientResults.length === 0) {
+      return res.status(404).json({ success: false, message: 'Client non trouvé' });
+    }
+
+    const client = clientResults[0];
+
+    // Vérification de l'existence de l'artisan
+    con.query('SELECT * FROM builder WHERE cin = ?', [builderCin], async (builderErr, builderResults) => {
+      if (builderErr) {
+        console.error('DB error fetching builder:', builderErr);
+        return res.status(500).json({ success: false, message: 'Erreur de base de données (artisan)' });
+      }
+      if (builderResults.length === 0) {
+        return res.status(404).json({ success: false, message: 'Artisan non trouvé' });
+      }
+
+      const builder = builderResults[0];
+      if (!builder.api_key) {
+        console.error('Builder API key missing:', builder);
+        return res.status(500).json({ success: false, message: 'Clé API de l\'artisan manquante' });
+      }
+
+      const paymeeApiKey = builder.api_key.trim();
+
+      // Enregistrement de la transaction dans la base de données
+      con.query(
+        'INSERT INTO transactions (order_id, client_cin, builder_cin, amount, status) VALUES (?, ?, ?, ?, ?)',
+        [orderId, clientCin, builderCin, amount, 'pending'],
+        (transactionErr) => {
+          if (transactionErr) {
+            console.error('Error saving transaction:', transactionErr);
+            return res.status(500).json({ success: false, message: 'Erreur lors de l\'enregistrement de la transaction' });
+          }
+
+          // Préparation de la charge utile pour Paymee
+          const payload = {
+            amount: Number(amount),
+            note: `Paiement à l'artisan CIN ${builderCin}`,
+            first_name: client.first_name,
+            last_name: client.last_name,
+            email: client.email,
+            phone: client.phone,
+            return_url: `${FRONTEND_URL}/payment-success`,
+            cancel_url: `${FRONTEND_URL}/payment-fail`,
+            webhook_url: `${BACKEND_URL}/api/payment-webhook`,
+            order_id: orderId
+          };
+
+          // Appel à l'API Paymee
+          axios.post(PAYMEE_API_URL, payload, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Token ${paymeeApiKey}`
+            }
+          })
+            .then((response) => {
+              if (response.data && response.data.result?.link) {
+                return res.status(200).json({
+                  success: true,
+                  paymentLink: response.data.result.link
+                });
+              } else {
+                console.error('Invalid response from Paymee:', response.data);
+                return res.status(500).json({ success: false, message: 'Réponse invalide de Paymee' });
+              }
+            })
+            .catch((error) => {
+              console.error('Error calling Paymee API:', error.response?.data || error.message);
+              return res.status(500).json({
+                success: false,
+                message: 'Échec de la demande de paiement',
+                error: error.response?.data || error.message
+              });
+            });
+        }
+      );
+    });
+  });
+});
+
+// Route webhook pour les notifications de paiement
+router.post('/payment-webhook', (req, res) => {
+  console.log('Payment webhook received:', req.body);
+  
+  const { order_id, status } = req.body;
+  
+  if (!order_id || !status) {
+    return res.status(400).json({ success: false, message: 'Données de webhook incomplètes' });
+  }
+  
+  // Mise à jour du statut de la transaction
+  con.query(
+    'UPDATE transactions SET status = ? WHERE order_id = ?',
+    [status, order_id],
+    (err) => {
+      if (err) {
+        console.error('Error updating transaction status:', err);
+        return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour du statut' });
+      }
+      
+      return res.status(200).json({ success: true, message: 'Statut de transaction mis à jour' });
+    }
+  );
+});
+
 
 export { router as clientRouter };

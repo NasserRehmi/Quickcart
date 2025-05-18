@@ -28,6 +28,9 @@ import AdminEditAdmin from "./components/AdminEditAdmin";
 import AddClient from "./components/AddClient";
 import AddBuilder from "./components/AddBuilder";
 import AddAdmin from "./components/AddAdmin";
+import PayBuilder from "./components/PayBuilder";
+import PaymentSuccess from "./components/payment-success";
+import PaymentFail from "./components/payment-fail";
 function App() {
   return (
     <Router>
@@ -45,6 +48,7 @@ function App() {
         <Route path="/workrequest/:builderCin" element={<PrivateRoute><WorkRequest /></PrivateRoute>} />
         <Route path="/workrequest/details/:id" element={<WorkRequestDetails />} />
         <Route path="/clientwork/:clientCin" element={<PrivateRoute><ClientWork /></PrivateRoute>} />
+       <Route path="/client/paybuilder/:builderCin" element={<PrivateRoute><PayBuilder /></PrivateRoute>} />
         <Route path="/request/:cin" element={<PrivateRoute><Request /></PrivateRoute>} />
         <Route path="/Reclamation" element={<PrivateRoute><PassReclamation /></PrivateRoute>} />
         <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboard/></PrivateRoute>} />
@@ -58,6 +62,9 @@ function App() {
         <Route path="/admin/addclient" element={<PrivateRoute><AddClient/></PrivateRoute>} />
         <Route path="/admin/addbuilder" element={<PrivateRoute><AddBuilder/></PrivateRoute>} />
         <Route path="/admin/addadmin" element={<PrivateRoute><AddAdmin/></PrivateRoute>} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+<Route path="/payment-fail" element={<PaymentFail />} />
+
       </Routes>
       <Footer />
     </Router>

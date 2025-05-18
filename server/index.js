@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import { clientRouter } from './Routes/ClientRoutes.js';
 import cookieParser from 'cookie-parser';
-import path from 'path'; // For handling file paths   
+import path from 'path'; // For handling file paths 
+import { paymentRouter } from './Routes/PaymentRoutes.js';
+
 
 const app = express();
 
@@ -27,6 +29,7 @@ app.use(cookieParser());
 
 // Routes
 app.use('/auth', clientRouter);
+app.use('/api', paymentRouter);
 
 // Handle preflight requests for all routes
 app.options('*', cors());

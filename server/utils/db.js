@@ -1,5 +1,5 @@
-import mysql from 'mysql' 
-const con=mysql.createConnection({
+import mysql2 from 'mysql2' 
+const con=mysql2.createConnection({
     host:"localhost",
     user:"root",
     password:"",

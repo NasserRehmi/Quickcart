@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import AdminLayout from "../components/AdminLayout"; 
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [adminName, setAdminName] = useState("Admin");
@@ -38,29 +39,34 @@ const AdminDashboard = () => {
           <button className="logout-button" onClick={handleLogout}>Logout</button>
         </div>
 
-        <div className="dashboard-stats">
-          <div className="stat-card">
-            <h2>Total Clients</h2>
-            <p>{totalClients}</p>
+        <div className="dashboard-stats-vertical">
+          <div className="stat-card-expanded">
+            <h2>Client Management</h2>
+            <p className="stat-number">{totalClients}</p>
+            <p className="stat-description">
+              This represents the total number of registered clients in the system. 
+              Clients can request repair services and track their ongoing projects through our platform.
+            </p>
+            <Link to="/admin/clients" className="view-details-link">View All Clients →</Link>
           </div>
-          <div className="stat-card">
-            <h2>Total Builders</h2>
-            <p>{totalBuilders}</p>
+
+          <div className="stat-card-expanded">
+            <h2>Builder Network</h2>
+            <p className="stat-number">{totalBuilders}</p>
+            <p className="stat-description">
+              These are the skilled builders currently registered on our platform. 
+              Each builder has been verified and can be assigned to client repair projects.
+            </p>
+            <Link to="/admin/builders" className="view-details-link">Manage Builders →</Link>
           </div>
-          <div className="stat-card">
-            <h2>Ongoing Repairs</h2>
-            <p>{ongoingRepairs}</p>
-          </div>
-        </div>  
-<br></br>
-        <div className="recent-activity">
-          <h2>Recent Activity</h2>
-          <div className="activity-list">
-            <ul>
-              <li><strong>Client Request:</strong> John Doe requested a repair for the bathroom.</li>
-              <li><strong>Builder Update:</strong> Mike’s project is in progress.</li>
-              <li><strong>Reclamation:</strong> Client Jane Smith reported safety issues.</li>
-            </ul>
+
+          <div className="stat-card-expanded">
+            <h2>Active Repair Projects</h2>
+            <p className="stat-number">{ongoingRepairs}</p>
+            <p className="stat-description">
+              These are the currently ongoing repair projects being managed through our system. 
+              You can monitor progress, assign builders, and update project statuses.
+            </p>
           </div>
         </div>
       </div>
