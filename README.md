@@ -4,8 +4,8 @@
 
 ## 🔨 Current Progress
 - ✅ MySQL database setup (replaced MongoDB)
-- ✅ Product routes , models and User authentication
-- 🚧 Ongoing: code verification ,ux , payment integration
+- ✅ Product routes , models and User authentication and payment systeme
+- 🚧 Ongoing: code verification ,ux 
 
 ## 📦 Installation
 ```bash
